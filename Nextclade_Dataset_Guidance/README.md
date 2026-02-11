@@ -474,3 +474,12 @@ This guide uses annotation files in two formats:
 These two files, which you will be downloading from NCBI, should be concordant.
 
 You may find that you want to modify the .gff3 genome annotation file that you include in your Nextclade dataset. (Perhaps you would like to add, remove, or modify certain regions of the genome.) If you do, you will need to first convert your modified .gff3 genome annotation file to a .gb genome annotation file, and then use your updated .gb genome annotation file as input to re-generate your tree using augur_from_mltree (Step 6 of this guide). You can easily convert your .gff3 annotation file to a .gb annotation file using Galaxy: https://usegalaxy.eu/?tool_id=gff_to_sequence (You will also need the corresponding fasta sequence you downloaded from NCBI.) Note that all feature annotations have to be multiples of 3, and that Nextclade treats CDS/genes as interchangeable but the preferred format for features is CDS.
+
+## Version 1.0
+### Date
+February 10, 2026
+
+### Authors
+- Lydia A. Krasilnikova (@lakras)
+- Mary Godec (@meg256)
+- Matthew Doucette (@mndoucette)
