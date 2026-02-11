@@ -1,10 +1,3 @@
-| | | | |
-|-|-|-|-|
-| ![MA DPH logo](https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/MassDPH.svg/330px-MassDPH.svg.png?20170710152818) | Massachusetts State Public<br>Health Laboratory<br>305 South Street<br>Jamaica Plain, MA 02130 | Document Number/Name<br>Guidance Document for<br>Generating a Nextclade Dataset | Version: 1.0<br>Document Owner:<br>MASPHL-Bioinformatics|
-
-
-
-
 # Guidance Document for Generating a Nextclade Dataset
 
 * [Principle/Purpose](#principlepurpose)
