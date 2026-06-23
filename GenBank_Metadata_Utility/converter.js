@@ -1,5 +1,6 @@
 const inputFile = document.getElementById('inputFile');
 const downloadButton = document.getElementById('downloadButton');
+const previewField = document.getElementById('previewField');
 
 let processedBlob = null;
 let originalFilename = '';
@@ -10,18 +11,21 @@ inputFile.addEventListener('change', async (event) => {
 
 	originalFilename = file.name;
 
-	// Read file as text
+	// read file as text
 	const text = await file.text();
 
-	// Process file
+	// process file
 	const genbankText = genbankToMetadataTable(text);
+	const previewGenbankText = retrieveFirstLines(genbankText, 6) + "\nand so on...";
 
-	// Create a Blob containing the processed data
+	// create a Blob containing the processed data
 	processedBlob = new Blob([genbankText], {
 		type: 'text/plain'
 	});
-
+	
+	// update UI
 	downloadButton.disabled = false;
+	previewField.value = previewGenbankText;
 });
 
 downloadButton.addEventListener('click', () => {
@@ -38,6 +42,10 @@ downloadButton.addEventListener('click', () => {
 
 	URL.revokeObjectURL(url);
 });
+
+function retrieveFirstLines(text, numberLines) {
+    return text.split(/\r?\n/).slice(0, numberLines).join('\n');
+}
 
 function genbankToMetadataTable(genbankText) {
     const DELIMITER = "\t";
