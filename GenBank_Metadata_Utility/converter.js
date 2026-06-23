@@ -51,6 +51,63 @@ function dateAsStringForExcel(dateText) {
     return "=\"" + dateText + "\"";
 }
 
+function cleanDate(date) {
+  const MONTHS = {
+    Jan: "01", Feb: "02", Mar: "03", Apr: "04",
+    May: "05", Jun: "06", Jul: "07", Aug: "08",
+    Sep: "09", Oct: "10", Nov: "11", Dec: "12"
+  };
+
+  let year = "XXXX";
+  let month = "XX";
+  let day = "XX";
+
+  date = date.trim();
+  
+  // empty input date
+  if (date === "") {
+    return "XXXX-XX-XX";
+  }
+
+  // YYYY-MM-DD
+  let match = date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (match) {
+    return `${match[1]}-${match[2]}-${match[3]}`;
+  }
+
+  // YYYY-MM
+  match = date.match(/^(\d{4})-(\d{2})$/);
+  if (match) {
+    return `${match[1]}-${match[2]}-XX`;
+  }
+
+  // DD-Mon-YYYY
+  match = date.match(/^(\d{1,2})-([A-Za-z]{3})-(\d{4})$/);
+  if (match) {
+    day = match[1].padStart(2, "0");
+    month = MONTHS[match[2]];
+    year = match[3];
+    return `${year}-${month}-${day}`;
+  }
+
+  // Mon-YYYY
+  match = date.match(/^([A-Za-z]{3})-(\d{4})$/);
+  if (match) {
+    month = MONTHS[match[1]];
+    year = match[2];
+    return `${year}-${month}-XX`;
+  }
+
+  // YYYY
+  match = date.match(/^(\d{4})$/);
+  if (match) {
+    year = match[1];
+    return `${year}-XX-XX`;
+  }
+
+  return `${year}-${month}-${day}`;
+}
+
 function genbankToMetadataTable(genbankText) {
     const DELIMITER = "\t";
     const NEWLINE = "\n";
@@ -71,6 +128,7 @@ function genbankToMetadataTable(genbankText) {
         "host",
         "geo_loc_name",
         "collection_date",
+        "collection_date_clean",
         "collection_date_string_excel",
         "note",
         "authors",
@@ -90,6 +148,7 @@ function genbankToMetadataTable(genbankText) {
     let host = "";
     let geo_loc_name = "";
     let collection_date = "";
+    let collection_date_clean = "";
     let collection_date_string_excel = "";
     let note = "";
     let noteContinuing = false;
@@ -117,7 +176,8 @@ function genbankToMetadataTable(genbankText) {
             host,
             geo_loc_name,
             collection_date,
-            collection_date_string_excel,
+            cleanDate(collection_date),
+            dateAsStringForExcel(collection_date),
             note,
             authors,
             title
@@ -146,7 +206,6 @@ function genbankToMetadataTable(genbankText) {
             host = "";
             geo_loc_name = "";
             collection_date = "";
-            collection_date_string_excel = "";
             note = "";
             authors = "";
             title = "";
@@ -232,7 +291,6 @@ function genbankToMetadataTable(genbankText) {
         match = line.match(/                     \/collection_date="(.*)"/);
         if (match) {
             collection_date = match[1];
-            collection_date_string_excel = dateAsStringForExcel(collection_date);
         }
 
         // note
