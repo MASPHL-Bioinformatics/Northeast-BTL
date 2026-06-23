@@ -47,6 +47,10 @@ function retrieveFirstLines(text, numberLines) {
     return text.split(/\r?\n/).slice(0, numberLines).join('\n');
 }
 
+function dateAsStringForExcel(dateText) {
+    return "=\"" + dateText + "\"";
+}
+
 function genbankToMetadataTable(genbankText) {
     const DELIMITER = "\t";
     const NEWLINE = "\n";
@@ -67,6 +71,7 @@ function genbankToMetadataTable(genbankText) {
         "host",
         "geo_loc_name",
         "collection_date",
+        "collection_date_string_excel",
         "note",
         "authors",
         "title"
@@ -85,6 +90,7 @@ function genbankToMetadataTable(genbankText) {
     let host = "";
     let geo_loc_name = "";
     let collection_date = "";
+    let collection_date_string_excel = "";
     let note = "";
     let noteContinuing = false;
     let authors = "";
@@ -111,6 +117,7 @@ function genbankToMetadataTable(genbankText) {
             host,
             geo_loc_name,
             collection_date,
+            collection_date_string_excel,
             note,
             authors,
             title
@@ -139,6 +146,7 @@ function genbankToMetadataTable(genbankText) {
             host = "";
             geo_loc_name = "";
             collection_date = "";
+            collection_date_string_excel = "";
             note = "";
             authors = "";
             title = "";
@@ -224,6 +232,7 @@ function genbankToMetadataTable(genbankText) {
         match = line.match(/                     \/collection_date="(.*)"/);
         if (match) {
             collection_date = match[1];
+            collection_date_string_excel = dateAsStringForExcel(collection_date);
         }
 
         // note
