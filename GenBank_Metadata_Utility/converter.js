@@ -59,6 +59,9 @@ function genbankToMetadataTable(genbankText) {
         "length",
         "organism",
         "mol_type",
+        "isolate",
+        "db_xref",
+        "metagenome_source",
         "strain",
         "isolation_source",
         "host",
@@ -74,6 +77,9 @@ function genbankToMetadataTable(genbankText) {
     let length = "";
     let organism = "";
     let mol_type = "";
+    let isolate = "";
+    let db_xref = "";
+    let metagenome_source = "";
     let strain = "";
     let isolation_source = "";
     let host = "";
@@ -97,6 +103,9 @@ function genbankToMetadataTable(genbankText) {
             length,
             organism,
             mol_type,
+            isolate,
+            db_xref,
+            metagenome_source,
             strain,
             isolation_source,
             host,
@@ -122,6 +131,9 @@ function genbankToMetadataTable(genbankText) {
             length = "";
             organism = "";
             mol_type = "";
+            isolate = "";
+            db_xref = "";
+            metagenome_source = "";
             strain = "";
             isolation_source = "";
             host = "";
@@ -164,6 +176,24 @@ function genbankToMetadataTable(genbankText) {
         match = line.match(/                     \/mol_type="(.*)"/);
         if (match) {
             mol_type = match[1];
+        }
+        
+        // isolate
+        match = line.match(/                     \/isolate="(.*)"/);
+        if (match) {
+            isolate = match[1];
+        }
+        
+        // db_xref
+        match = line.match(/                     \/db_xref="(.*)"/);
+        if (match) {
+            db_xref = match[1];
+        }
+        
+        // metagenome_source
+        match = line.match(/                     \/metagenome_source="(.*)"/);
+        if (match) {
+            metagenome_source = match[1];
         }
 
         // strain
