@@ -15,7 +15,8 @@ inputFile.addEventListener('change', async (event) => {
 	const text = await file.text();
 
 	// process file
-	const genbankText = genbankToMetadataTable(text);
+	const sourceQualifiers = retrieveSourceQualifiers(text);
+	const genbankText = genbankToMetadataTable(text, sourceQualifiers);
 	const previewGenbankText = retrieveFirstLines(genbankText, 6) + "\nand so on...";
 
 	// create a Blob containing the processed data
@@ -108,7 +109,40 @@ function cleanDate(date) {
   return `${year}-${month}-${day}`;
 }
 
-function genbankToMetadataTable(genbankText) {
+function retrieveSourceQualifiers(genbankText) {
+    const qualifiers = new Set([
+        "collection_date",
+        "note"
+    ]);
+
+    let inSource = false;
+
+    const lines = genbankText.split(/\r?\n/);
+
+    for (const line of lines) {
+
+        // feature line
+        const featureMatch = line.match(/^ {5}(\S+)/);
+        if (featureMatch) {
+            inSource = featureMatch[1] === "source";
+            continue;
+        }
+
+        if (!inSource) {
+            continue;
+        }
+
+        // qualifier line
+        const qualifierMatch = line.match(/^\s+\/([A-Za-z0-9_]+)/);
+        if (qualifierMatch) {
+            qualifiers.add(qualifierMatch[1]);
+        }
+    }
+
+    return [...qualifiers].sort();
+}
+
+function genbankToMetadataTable(genbankText, qualifiers) {
     const DELIMITER = "\t";
     const NEWLINE = "\n";
 
@@ -118,19 +152,9 @@ function genbankToMetadataTable(genbankText) {
         "accession",
         "name",
         "length",
-        "organism",
-        "mol_type",
-        "isolate",
-        "db_xref",
-        "metagenome_source",
-        "strain",
-        "isolation_source",
-        "host",
-        "geo_loc_name",
-        "collection_date",
+        ...qualifiers,
         "collection_date_clean",
         "collection_date_string_excel",
-        "note",
         "authors",
         "title"
     ].join(DELIMITER));
@@ -138,24 +162,18 @@ function genbankToMetadataTable(genbankText) {
     let accession = "";
     let name = "";
     let length = "";
-    let organism = "";
-    let mol_type = "";
-    let isolate = "";
-    let db_xref = "";
-    let metagenome_source = "";
-    let strain = "";
-    let isolation_source = "";
-    let host = "";
-    let geo_loc_name = "";
-    let collection_date = "";
-    let collection_date_clean = "";
-    let collection_date_string_excel = "";
-    let note = "";
-    let noteContinuing = false;
     let authors = "";
     let authorsContinuing = false;
     let title = "";
     let titleContinuing = false;
+    
+    let qualifierValues = {};
+	for (const qualifier of qualifiers) {
+		qualifierValues[qualifier] = "";
+	}
+	
+	let inSource = false;
+	let continuingQualifier = null;
 
     function writeCurrentEntry() {
         if (!accession) {
@@ -166,19 +184,9 @@ function genbankToMetadataTable(genbankText) {
             accession,
             name,
             length,
-            organism,
-            mol_type,
-            isolate,
-            db_xref,
-            metagenome_source,
-            strain,
-            isolation_source,
-            host,
-            geo_loc_name,
-            collection_date,
-            cleanDate(collection_date),
-            dateAsStringForExcel(collection_date),
-            note,
+            ...qualifiers.map(q => qualifierValues[q]),
+            cleanDate(qualifierValues["collection_date"] || ""),
+            dateAsStringForExcel(qualifierValues["collection_date"] || ""),
             authors,
             title
         ].join(DELIMITER));
@@ -196,21 +204,16 @@ function genbankToMetadataTable(genbankText) {
             accession = "";
             name = "";
             length = "";
-            organism = "";
-            mol_type = "";
-            isolate = "";
-            db_xref = "";
-            metagenome_source = "";
-            strain = "";
-            isolation_source = "";
-            host = "";
-            geo_loc_name = "";
-            collection_date = "";
-            note = "";
             authors = "";
             title = "";
-
-            noteContinuing = false;
+            
+            qualifierValues = {};
+			for (const qualifier of qualifiers) {
+				qualifierValues[qualifier] = "";
+			}
+			
+			inSource = false;
+			continuingQualifier = null;
             authorsContinuing = false;
             titleContinuing = false;
         }
@@ -231,81 +234,6 @@ function genbankToMetadataTable(genbankText) {
         match = line.match(/DEFINITION  (.*)$/);
         if (match) {
             name = match[1];
-        }
-
-        // organism
-        match = line.match(/                     \/organism="(.*)"/);
-        if (match) {
-            organism = match[1];
-        }
-
-        // mol_type
-        match = line.match(/                     \/mol_type="(.*)"/);
-        if (match) {
-            mol_type = match[1];
-        }
-        
-        // isolate
-        match = line.match(/                     \/isolate="(.*)"/);
-        if (match) {
-            isolate = match[1];
-        }
-        
-        // db_xref
-        match = line.match(/                     \/db_xref="(.*)"/);
-        if (match) {
-            db_xref = match[1];
-        }
-        
-        // metagenome_source
-        match = line.match(/                     \/metagenome_source="(.*)"/);
-        if (match) {
-            metagenome_source = match[1];
-        }
-
-        // strain
-        match = line.match(/                     \/strain="(.*)"/);
-        if (match) {
-            strain = match[1];
-        }
-
-        // isolation_source
-        match = line.match(/                     \/isolation_source="(.*)"/);
-        if (match) {
-            isolation_source = match[1];
-        }
-
-        // host
-        match = line.match(/                     \/host="(.*)"/);
-        if (match) {
-            host = match[1];
-        }
-
-        // geo_loc_name
-        match = line.match(/                     \/geo_loc_name="(.*)"/);
-        if (match) {
-            geo_loc_name = match[1];
-        }
-
-        // collection_date
-        match = line.match(/                     \/collection_date="(.*)"/);
-        if (match) {
-            collection_date = match[1];
-        }
-
-        // note
-        match = line.match(/                     \/note="(.*?)"?$/);
-        if (match) {
-            note = match[1];
-            noteContinuing = true;
-        }
-        else if (noteContinuing) {
-            match = line.match(/                     ([^"\/].*?)"?$/);
-            if (match) {
-                note += " " + match[1];
-            } else {
-                noteContinuing = false;
-            }
         }
 
         // authors
@@ -345,7 +273,60 @@ function genbankToMetadataTable(genbankText) {
                 titleContinuing = false;
             }
         }
-    }
+        
+        // feature start
+		match = line.match(/^ {5}(\S+)/);
+		if (match) {
+			inSource = match[1] === "source";
+			continuingQualifier = null;
+		}
+		
+		if (inSource) {
+		
+			// bare qualifier
+			match = line.match(/^\s+\/([A-Za-z0-9_]+)\s*$/);
+		
+			if (match) {
+				const qualifier = match[1];
+		
+				if (qualifier in qualifierValues) {
+					qualifierValues[qualifier] = "true";
+				}
+			}
+		
+			// qualifier with value
+			else if ((match = line.match(/^\s+\/([^=]+)="(.*?)"?$/))) {
+		
+				const qualifier = match[1];
+		
+				if (qualifier in qualifierValues) {
+					qualifierValues[qualifier] = match[2];
+		
+					if (line.trimEnd().endsWith('"')) {
+						continuingQualifier = null;
+					} else {
+						continuingQualifier = qualifier;
+					}
+				}
+			}
+		
+			// qualifier continuation
+			else if (continuingQualifier) {
+		
+				const contMatch = line.match(/^\s+([^\/].*?)"?$/);
+		
+				if (contMatch) {
+					qualifierValues[continuingQualifier] += " " + contMatch[1];
+		
+					if (line.trimEnd().endsWith('"')) {
+						continuingQualifier = null;
+					}
+				} else {
+					continuingQualifier = null;
+				}
+			}
+		}
+	}
 
     // print last entry
     writeCurrentEntry();
