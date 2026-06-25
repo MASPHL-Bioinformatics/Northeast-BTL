@@ -60,7 +60,7 @@ function renderCheckboxes(sourceQualifiers) {
 	masterLabel.style.display = 'block';
 	masterLabel.style.fontFamily = 'verdana';
 	masterLabel.style.fontSize = '90%';
-	masterLabel.style.fontStyle = 'italic';
+	masterLabel.style.textDecoration = 'underline';
 
 	const masterCheckbox = document.createElement('input');
 	masterCheckbox.type = 'checkbox';
