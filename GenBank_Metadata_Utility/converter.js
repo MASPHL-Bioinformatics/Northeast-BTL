@@ -31,6 +31,7 @@ inputFile.addEventListener('change', async (event) => {
 	for (const f of baseFields) columnState[f] = true;
 	columnState["collection_date_clean"] = true;
 	columnState["collection_date_string_excel"] = true;
+	columnState["collection_date_clean_string_excel"] = true;
 
 	// update UI
 	renderCheckboxes(currentQualifiers);
@@ -40,8 +41,8 @@ inputFile.addEventListener('change', async (event) => {
 function renderCheckboxes(sourceQualifiers) {
 	const boldFields = new Set([
 		"name", "length", "geo_loc_name", "host",
-		"collection_date", "collection_date_string_excel",
-		"collection_date_clean", "authors", "title", "note"
+		"collection_date", "collection_date_clean", "collection_date_string_excel",
+		"collection_date_clean_string_excel", "authors", "title", "note"
 	]);
 
 	checkboxContainer.innerHTML = '';
@@ -52,7 +53,8 @@ function renderCheckboxes(sourceQualifiers) {
 		...baseFields,
 		...sourceQualifiers,
 		"collection_date_clean",
-		"collection_date_string_excel"
+		"collection_date_string_excel",
+		"collection_date_clean_string_excel"
 	].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
 
 	// select/deselect all checkbox
@@ -121,12 +123,14 @@ function regenerateOutput() {
 
 	const includeCleanDate = columnState["collection_date_clean"];
 	const includeExcelDate = columnState["collection_date_string_excel"];
+	const includeCleanExcelDate = columnState["collection_date_clean_string_excel"];
 
 	const genbankText = genbankToMetadataTable(
 		currentText,
 		activeQualifiers,
 		includeCleanDate,
 		includeExcelDate,
+		includeCleanExcelDate,
 		columnState
 	);
 
@@ -254,7 +258,7 @@ function retrieveSourceQualifiers(genbankText) {
     return [...qualifiers].sort();
 }
 
-function genbankToMetadataTable(genbankText, activeQualifiers, includeCleanDate = true, includeExcelDate = true, includeColumnState = {}) {
+function genbankToMetadataTable(genbankText, activeQualifiers, includeCleanDate = true, includeExcelDate = true, includeCleanExcelDate = true, includeColumnState = {}) {
     const DELIMITER = "\t";
     const NEWLINE = "\n";
 
@@ -274,6 +278,7 @@ function genbankToMetadataTable(genbankText, activeQualifiers, includeCleanDate 
 		...activeQualifiers,
 		...(includeCleanDate ? ["collection_date_clean"] : []),
 		...(includeExcelDate ? ["collection_date_string_excel"] : []),
+		...(includeCleanExcelDate ? ["collection_date_clean_string_excel"] : []),
 		...(activeColumns.authors ? ["authors"] : []),
 		...(activeColumns.title ? ["title"] : [])
 	];
@@ -308,6 +313,7 @@ function genbankToMetadataTable(genbankText, activeQualifiers, includeCleanDate 
 			...activeQualifiers.map(q => qualifierValues[q]),
 			...(includeCleanDate ? [cleanDate(qualifierValues["collection_date"] || collection_date)] : []),
 			...(includeExcelDate ? [dateAsStringForExcel(qualifierValues["collection_date"] || collection_date)] : []),
+			...(includeCleanExcelDate ? [dateAsStringForExcel(cleanDate(qualifierValues["collection_date"] || collection_date))] : []),
 			...(activeColumns.authors ? [authors] : []),
 			...(activeColumns.title ? [title] : [])
 		].join(DELIMITER));
