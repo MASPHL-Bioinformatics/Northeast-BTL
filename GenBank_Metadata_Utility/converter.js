@@ -1,9 +1,14 @@
 const inputFile = document.getElementById('inputFile');
 const downloadButton = document.getElementById('downloadButton');
 const previewField = document.getElementById('previewField');
+const checkboxContainer = document.getElementById('checkboxContainer');
 
 let processedBlob = null;
 let originalFilename = '';
+
+let currentText = '';
+let currentQualifiers = [];
+let columnState = {};
 
 inputFile.addEventListener('change', async (event) => {
 	const file = event.target.files[0];
@@ -13,21 +18,128 @@ inputFile.addEventListener('change', async (event) => {
 
 	// read file as text
 	const text = await file.text();
+	currentText = text;
 
 	// process file
-	const sourceQualifiers = retrieveSourceQualifiers(text);
-	const genbankText = genbankToMetadataTable(text, sourceQualifiers);
-	const previewGenbankText = retrieveFirstLines(genbankText, 6) + "\nand so on...";
+	currentQualifiers = retrieveSourceQualifiers(text);
 
-	// create a Blob containing the processed data
+	// initialize all columns ON by default
+	const baseFields = ["name", "length", "authors", "title"];
+
+	columnState = {};
+	for (const q of currentQualifiers) columnState[q] = true;
+	for (const f of baseFields) columnState[f] = true;
+	columnState["collection_date_clean"] = true;
+	columnState["collection_date_string_excel"] = true;
+
+	// update UI
+	renderCheckboxes(currentQualifiers);
+	regenerateOutput();
+});
+
+function renderCheckboxes(sourceQualifiers) {
+	const boldFields = new Set([
+		"name", "length", "geo_loc_name", "host",
+		"collection_date", "collection_date_string_excel",
+		"collection_date_clean", "authors", "title", "note"
+	]);
+
+	checkboxContainer.innerHTML = '';
+
+	const baseFields = ["name", "length", "authors", "title"];
+
+	const allFields = [
+		...baseFields,
+		...sourceQualifiers,
+		"collection_date_clean",
+		"collection_date_string_excel"
+	].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+
+	// select/deselect all checkbox
+	const masterLabel = document.createElement('label');
+	masterLabel.style.display = 'block';
+	masterLabel.style.fontFamily = 'verdana';
+	masterLabel.style.fontSize = '75%';
+	masterLabel.style.fontStyle = 'italic';
+
+	const masterCheckbox = document.createElement('input');
+	masterCheckbox.type = 'checkbox';
+
+	const allChecked = allFields.every(f => columnState[f] !== false);
+	const noneChecked = allFields.every(f => columnState[f] === false);
+
+	masterCheckbox.checked = allChecked;
+	masterCheckbox.indeterminate = !allChecked && !noneChecked;
+
+	masterCheckbox.addEventListener('change', () => {
+		const newState = masterCheckbox.checked;
+
+		allFields.forEach(f => {
+			columnState[f] = newState;
+		});
+
+		renderCheckboxes(sourceQualifiers);
+		regenerateOutput();
+	});
+
+	masterLabel.appendChild(masterCheckbox);
+	masterLabel.appendChild(document.createTextNode(' SELECT/DESELECT ALL'));
+	checkboxContainer.appendChild(masterLabel);
+
+	// individual checkboxes
+	allFields.forEach(q => {
+		const label = document.createElement('label');
+		label.style.display = 'block';
+		label.style.fontFamily = 'verdana';
+		label.style.fontSize = '75%';
+		if (boldFields.has(q)) {
+			label.style.fontWeight = 'bold';
+		}
+
+		const checkbox = document.createElement('input');
+		checkbox.type = 'checkbox';
+		checkbox.value = q;
+		checkbox.checked = columnState[q] ?? true;
+
+		checkbox.addEventListener('change', () => {
+			columnState[q] = checkbox.checked;
+			renderCheckboxes(sourceQualifiers);
+			regenerateOutput();
+		});
+
+		label.appendChild(checkbox);
+		label.appendChild(document.createTextNode(' ' + q));
+
+		checkboxContainer.appendChild(label);
+	});
+}
+
+function regenerateOutput() {
+	if (!currentText) return;
+
+	const activeQualifiers = currentQualifiers.filter(q => columnState[q]);
+
+	const includeCleanDate = columnState["collection_date_clean"];
+	const includeExcelDate = columnState["collection_date_string_excel"];
+
+	const genbankText = genbankToMetadataTable(
+		currentText,
+		activeQualifiers,
+		includeCleanDate,
+		includeExcelDate,
+		columnState
+	);
+
+	const previewGenbankText =
+		retrieveFirstLines(genbankText, 6) + "\nand so on...";
+
 	processedBlob = new Blob([genbankText], {
 		type: 'text/plain'
 	});
-	
-	// update UI
+
 	downloadButton.disabled = false;
 	previewField.value = previewGenbankText;
-});
+}
 
 downloadButton.addEventListener('click', () => {
 	if (!processedBlob) return;
@@ -142,33 +254,42 @@ function retrieveSourceQualifiers(genbankText) {
     return [...qualifiers].sort();
 }
 
-function genbankToMetadataTable(genbankText, qualifiers) {
+function genbankToMetadataTable(genbankText, activeQualifiers, includeCleanDate = true, includeExcelDate = true, includeColumnState = {}) {
     const DELIMITER = "\t";
     const NEWLINE = "\n";
 
     const output = [];
 
-    output.push([
-        "accession",
-        "name",
-        "length",
-        ...qualifiers,
-        "collection_date_clean",
-        "collection_date_string_excel",
-        "authors",
-        "title"
-    ].join(DELIMITER));
+    const activeColumns = {
+		name: includeColumnState["name"],
+		length: includeColumnState["length"],
+		authors: includeColumnState["authors"],
+		title: includeColumnState["title"]
+	};
+	
+	const header = [
+		"accession",
+		...(activeColumns.name ? ["name"] : []),
+		...(activeColumns.length ? ["length"] : []),
+		...activeQualifiers,
+		...(includeCleanDate ? ["collection_date_clean"] : []),
+		...(includeExcelDate ? ["collection_date_string_excel"] : []),
+		...(activeColumns.authors ? ["authors"] : []),
+		...(activeColumns.title ? ["title"] : [])
+	];
+	output.push(header.join(DELIMITER));
 
     let accession = "";
     let name = "";
     let length = "";
+    let collection_date = "";
     let authors = "";
     let authorsContinuing = false;
     let title = "";
     let titleContinuing = false;
     
     let qualifierValues = {};
-	for (const qualifier of qualifiers) {
+	for (const qualifier of activeQualifiers) {
 		qualifierValues[qualifier] = "";
 	}
 	
@@ -181,15 +302,15 @@ function genbankToMetadataTable(genbankText, qualifiers) {
         }
 
         output.push([
-            accession,
-            name,
-            length,
-            ...qualifiers.map(q => qualifierValues[q]),
-            cleanDate(qualifierValues["collection_date"] || ""),
-            dateAsStringForExcel(qualifierValues["collection_date"] || ""),
-            authors,
-            title
-        ].join(DELIMITER));
+			accession,
+			...(activeColumns.name ? [name] : []),
+			...(activeColumns.length ? [length] : []),
+			...activeQualifiers.map(q => qualifierValues[q]),
+			...(includeCleanDate ? [cleanDate(qualifierValues["collection_date"] || collection_date)] : []),
+			...(includeExcelDate ? [dateAsStringForExcel(qualifierValues["collection_date"] || collection_date)] : []),
+			...(activeColumns.authors ? [authors] : []),
+			...(activeColumns.title ? [title] : [])
+		].join(DELIMITER));
     }
 
     const lines = genbankText.split(/\r?\n/);
@@ -208,7 +329,7 @@ function genbankToMetadataTable(genbankText, qualifiers) {
             title = "";
             
             qualifierValues = {};
-			for (const qualifier of qualifiers) {
+			for (const qualifier of activeQualifiers) {
 				qualifierValues[qualifier] = "";
 			}
 			
@@ -298,6 +419,10 @@ function genbankToMetadataTable(genbankText, qualifiers) {
 			else if ((match = line.match(/^\s+\/([^=]+)="(.*?)"?$/))) {
 		
 				const qualifier = match[1];
+				
+				if (qualifier == "collection_date") {
+					collection_date = match[2];
+				}
 		
 				if (qualifier in qualifierValues) {
 					qualifierValues[qualifier] = match[2];
