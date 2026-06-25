@@ -59,7 +59,7 @@ function renderCheckboxes(sourceQualifiers) {
 	const masterLabel = document.createElement('label');
 	masterLabel.style.display = 'block';
 	masterLabel.style.fontFamily = 'verdana';
-	masterLabel.style.fontSize = '75%';
+	masterLabel.style.fontSize = '90%';
 	masterLabel.style.fontStyle = 'italic';
 
 	const masterCheckbox = document.createElement('input');
@@ -91,7 +91,7 @@ function renderCheckboxes(sourceQualifiers) {
 		const label = document.createElement('label');
 		label.style.display = 'block';
 		label.style.fontFamily = 'verdana';
-		label.style.fontSize = '75%';
+		label.style.fontSize = '90%';
 		if (boldFields.has(q)) {
 			label.style.fontWeight = 'bold';
 		}
