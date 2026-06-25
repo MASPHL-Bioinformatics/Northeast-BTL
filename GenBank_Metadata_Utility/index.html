@@ -48,8 +48,20 @@
 			<span style="font-family:verdana; font-size:75%; line-height:1.5em">
 				<p>
 					<br>
+					Some software, such as Nextstrain or Nextclade, requires metadata to be in a table.
+					This tool allows you to generate a metadata table from a .gb file downloaded from GenBank without use of the command line or API.
+				</p>
+				<p>
 					Select your GenBank .gb file as downloaded from GenBank, then download your tab-separated metadata table.
 					Your data is not uploaded or sent anywhere; all processing happens in your browser.
+				</p>
+				<p>
+					Unless you're very lucky, you might notice that the metadata you retrieve from GenBank is messy.
+					This makes sense, as the metadata is generously submitted by many people.
+					Data cleaning is a necessary next step after downloading your metadata table.
+					This tool starts the process by adding an optional column, collection_date_clean, containing collection dates formatted in such a way that they can be ingested by Nextstrain or Nextclade.
+					Another column, collection_date_string_excel, can also be included to allow you to view collection dates as strings in Excel.
+					(Otherwise, Excel tends to get creative with dates.)
 				</p>
 				<p>
 					This utility is provided by the MASPHL bioinformatics team as the Northeast Bioinformatics Training Lead.
