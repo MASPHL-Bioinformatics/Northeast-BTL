@@ -9,6 +9,7 @@ let originalFilename = '';
 let currentText = '';
 let currentQualifiers = [];
 let columnState = {};
+let columnCounts = {};
 
 inputFile.addEventListener('change', async (event) => {
 	const file = event.target.files[0];
@@ -22,6 +23,7 @@ inputFile.addEventListener('change', async (event) => {
 
 	// process file
 	currentQualifiers = retrieveSourceQualifiers(text);
+	columnCounts = countColumnValues(text, currentQualifiers);
 
 	// initialize all columns ON by default
 	const baseFields = ["name", "length", "authors", "title"];
@@ -110,7 +112,14 @@ function renderCheckboxes(sourceQualifiers) {
 		});
 
 		label.appendChild(checkbox);
-		label.appendChild(document.createTextNode(' ' + q));
+		
+		const count = columnCounts[q] ?? 0;
+		const countText = count.toLocaleString();
+		const rowLabel = count === 1 ? "row" : "rows";
+		
+		label.appendChild(
+			document.createTextNode(` ${q} (${countText} ${rowLabel})`)
+		);
 
 		checkboxContainer.appendChild(label);
 	});
@@ -463,4 +472,180 @@ function genbankToMetadataTable(genbankText, activeQualifiers, includeCleanDate 
     writeCurrentEntry();
 
     return output.join(NEWLINE);
+}
+
+function countColumnValues(genbankText, qualifiers) {
+
+    const counts = {
+        name: 0,
+        length: 0,
+        authors: 0,
+        title: 0,
+        collection_date_clean: 0,
+        collection_date_string_excel: 0,
+        collection_date_clean_string_excel: 0
+    };
+
+    qualifiers.forEach(q => counts[q] = 0);
+
+    let accession = "";
+    let name = "";
+    let length = "";
+    let authors = "";
+    let title = "";
+    let collection_date = "";
+
+    let qualifierValues = {};
+    qualifiers.forEach(q => qualifierValues[q] = "");
+
+    let inSource = false;
+    let continuingQualifier = null;
+    let authorsContinuing = false;
+    let titleContinuing = false;
+
+    function finishEntry() {
+
+        if (!accession) return;
+
+        if (name) counts.name++;
+        if (length) counts.length++;
+        if (authors) counts.authors++;
+        if (title) counts.title++;
+
+        qualifiers.forEach(q => {
+            if (qualifierValues[q] !== "") {
+                counts[q]++;
+            }
+        });
+
+        const clean = cleanDate(qualifierValues["collection_date"] || collection_date);
+
+        if (clean !== "XXXX-XX-XX")
+            counts.collection_date_clean++;
+
+        if ((qualifierValues["collection_date"] || collection_date) !== "")
+            counts.collection_date_string_excel++;
+
+        if (clean !== "XXXX-XX-XX")
+            counts.collection_date_clean_string_excel++;
+    }
+
+    const lines = genbankText.split(/\r?\n/);
+
+    for (const line of lines) {
+
+        if (/LOCUS       /.test(line)) {
+
+            finishEntry();
+
+            accession = "";
+            name = "";
+            length = "";
+            authors = "";
+            title = "";
+            collection_date = "";
+
+            qualifierValues = {};
+            qualifiers.forEach(q => qualifierValues[q] = "");
+
+            inSource = false;
+            continuingQualifier = null;
+            authorsContinuing = false;
+            titleContinuing = false;
+        }
+
+        let match;
+
+        match = line.match(/LOCUS.+ (\d+ bp)/);
+        if (match) length = match[1];
+
+        match = line.match(/VERSION     (.*)$/);
+        if (match) accession = match[1];
+
+        match = line.match(/DEFINITION  (.*)$/);
+        if (match) name = match[1];
+
+        match = line.match(/  AUTHORS   (.*)/);
+        if (match) {
+            authors += (authors ? "; " : "") + match[1];
+            authorsContinuing = true;
+        } else if (authorsContinuing) {
+            match = line.match(/            (.*)/);
+            if (match)
+                authors += " " + match[1];
+            else
+                authorsContinuing = false;
+        }
+
+        match = line.match(/  TITLE     (.*)/);
+        if (match) {
+            if (match[1] !== "Direct Submission") {
+                title += (title ? "; " : "") + match[1];
+                titleContinuing = true;
+            }
+        } else if (titleContinuing) {
+            match = line.match(/            (.*)/);
+            if (match)
+                title += " " + match[1];
+            else
+                titleContinuing = false;
+        }
+
+        match = line.match(/^ {5}(\S+)/);
+        if (match) {
+            inSource = match[1] === "source";
+            continuingQualifier = null;
+        }
+
+        if (inSource) {
+
+            match = line.match(/^\s+\/([A-Za-z0-9_]+)\s*$/);
+
+            if (match) {
+
+                const qualifier = match[1];
+
+                if (qualifier in qualifierValues)
+                    qualifierValues[qualifier] = "true";
+            }
+
+            else if ((match = line.match(/^\s+\/([^=]+)="(.*?)"?$/))) {
+
+                const qualifier = match[1];
+
+                if (qualifier === "collection_date")
+                    collection_date = match[2];
+
+                if (qualifier in qualifierValues) {
+
+                    qualifierValues[qualifier] = match[2];
+
+                    continuingQualifier = line.trimEnd().endsWith('"')
+                        ? null
+                        : qualifier;
+                }
+            }
+
+            else if (continuingQualifier) {
+
+                match = line.match(/^\s+([^\/].*?)"?$/);
+
+                if (match) {
+
+                    qualifierValues[continuingQualifier] += " " + match[1];
+
+                    if (line.trimEnd().endsWith('"'))
+                        continuingQualifier = null;
+
+                } else {
+
+                    continuingQualifier = null;
+                }
+            }
+        }
+    }
+
+    finishEntry();
+
+    return counts;
 }
