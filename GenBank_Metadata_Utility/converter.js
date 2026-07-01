@@ -519,16 +519,9 @@ function countColumnValues(genbankText, qualifiers) {
             }
         });
 
-        const clean = cleanDate(qualifierValues["collection_date"] || collection_date);
-
-        if (clean !== "XXXX-XX-XX")
-            counts.collection_date_clean++;
-
-        if ((qualifierValues["collection_date"] || collection_date) !== "")
-            counts.collection_date_string_excel++;
-
-        if (clean !== "XXXX-XX-XX")
-            counts.collection_date_clean_string_excel++;
+        counts.collection_date_clean++;
+        counts.collection_date_string_excel++;
+        counts.collection_date_clean_string_excel++;
     }
 
     const lines = genbankText.split(/\r?\n/);
