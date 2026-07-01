@@ -340,6 +340,7 @@ function genbankToMetadataTable(genbankText, activeQualifiers, includeCleanDate 
             accession = "";
             name = "";
             length = "";
+            collection_date = "";
             authors = "";
             title = "";
             
