@@ -12,18 +12,18 @@ let columnState = {};
 let columnCounts = {};
 
 inputFile.addEventListener('change', async (event) => {
-	const file = event.target.files[0];
-	if (!file) return;
-
-	originalFilename = file.name;
-
-	// read file as text
-	const text = await file.text();
-	currentText = text;
+	const files = Array.from(event.target.files);
+	if (!files.length) return;
+	
+	originalFilename = files.length === 1? files[0].name:"combined.gb";
+	
+	// Read all selected files and concatenate them
+	const texts = await Promise.all(files.map(file => file.text()));
+	currentText = texts.join("\n");
 
 	// process file
-	currentQualifiers = retrieveSourceQualifiers(text);
-	columnCounts = countColumnValues(text, currentQualifiers);
+	currentQualifiers = retrieveSourceQualifiers(currentText);
+	columnCounts = countColumnValues(currentText, currentQualifiers);
 
 	// initialize all columns ON by default
 	const baseFields = ["name", "length", "authors", "title"];

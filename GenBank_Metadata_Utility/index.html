@@ -1,12 +1,12 @@
 <html>
 <head>
-	<meta name="description" content="Converts GenBank .gb file to metadata table." />
+	<meta name="description" content="Converts GenBank .gb files to metadata tables." />
 	<meta name="keywords" content="convert, conversion, genbank, gb, file, metadata, tab, tabular, table" />
 </head>
 
 <body>
 <title>
-	Convert GenBank .gb file to tab-separated metadata table
+	Convert GenBank .gb files to tab-separated metadata tables
 </title>
 <style type="text/css">
 	.link{color:#006633; text-decoration:underline;}
@@ -37,7 +37,7 @@
 					GenBank .gb file to metadata table conversion
 				</h1>
 				<h1 style="font-family:Tahoma; color:#999999; font-size:100%; letter-spacing:2px">
-					Convert GenBank .gb file to tab-separated metadata table.
+					Convert GenBank .gb files to tab-separated metadata tables.
 				</h1>
 			</span>
 		</td>
@@ -52,7 +52,10 @@
 					This tool allows you to generate a metadata table from a .gb file downloaded from GenBank without use of the command line or API.
 				</p>
 				<p>
-					Select your GenBank .gb file as downloaded from GenBank, then download your tab-separated metadata table.
+					Select your GenBank .gb file(s) as downloaded from GenBank, then download your tab-separated metadata table.
+					(Note that selecting multiple .gb files at once will produce one output table—to generate multiple output tables, process your .gb files one at a time.)
+				</p>
+				<p>
 					Your data is not uploaded or sent anywhere; all processing happens in your browser.
 				</p>
 				<p>
@@ -72,9 +75,9 @@
 					&nbsp;
 				</p>
 				<p>
-					STEP 1 ⬆: Select your GenBank .gb file:
+					STEP 1 ⬆: Select your GenBank .gb file(s):
 					<br>
-					<input type="file" id="inputFile" accept=".gb" />
+					<input type="file" id="inputFile" accept=".gb" multiple />
 				</p>
 				<p>
 					&nbsp;
@@ -90,7 +93,7 @@
 				<p>
 					STEP 3 ⬇: Download your tab-separated metadata table:
 					<br>
-					preview (first 5 rows):
+					Preview (first 5 rows):
 					<br>
 					<textarea rows="7" style="width: 100%; resize: none;" id="previewField" wrap="off" type="text" disabled></textarea>
 					<br>
