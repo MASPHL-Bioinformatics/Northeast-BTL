@@ -1,7 +1,7 @@
 <html>
 <head>
 	<meta name="description" content="Generate clades.tsv table." />
-	<meta name="keywords" content="clades.tsv, clades, nextclade, mutations, augur, convert, conversion, generate, file, table" />
+	<meta name="keywords" content="clades.tsv, clades, nextclade, nextstrain, augur, mutations, augur, convert, conversion, generate, file, table" />
 </head>
 
 <body>
@@ -37,7 +37,7 @@
 			</p>
 			<span style="line-height:1em">
 				<h1 style="font-family:Tahoma; color:#999999; font-size:150%; letter-spacing:4px">
-					clades.tsv table generation
+					Clades.tsv table generation
 				</h1>
 				<h1 style="font-family:Tahoma; color:#999999; font-size:100%; letter-spacing:2px">
 					Generates clades.tsv table from defining mutations copy/pasted from an augur tree.
@@ -52,6 +52,30 @@
 				<p>
 					<br>
 					This tool allows you to generate a clades.tsv table from defining mutations copy/pasted from an augur tree.
+					This clades.tsv file can then be input into the Nextstrain Augur pipeline and used to generate a Nextclade dataset.
+					See our <a href="https://github.com/MASPHL-Bioinformatics/Northeast-BTL/tree/main/Nextclade_Dataset_Guidance">Nextclade Guidance Document</a> for instructions on how to generate a Nextclade dataset using this utility.
+				</p>
+				<p>
+					To retrieve the defining mutations from your augur tree—
+					<br>
+					For each clade:
+					<ol>
+						<li>
+							Hover your mouse over the branch leading to all nodes known to be in the clade.
+						</li>
+						<li>
+							Hold down the shift key and click. You should see a pop-up with “Mutations observed on branch”.
+						</li>
+						<li>
+							Scroll down to the bottom of the pop-up and click the link: “Click to copy all mutations to clipboard as TSV”.
+						</li>
+						<li>
+							Paste the defining mutations in the clade's text area in this utility.
+						</li>
+					</ol>
+				</p>
+				<p>
+					Note that this utility only considers nucleotide mutations, and includes gaps as defining mutations.
 				</p>
 				<p>
 					This utility is provided by the MASPHL bioinformatics team as the Northeast Bioinformatics Training Lead.
