@@ -26,7 +26,7 @@ inputFile.addEventListener('change', async (event) => {
 	columnCounts = countColumnValues(currentText, currentQualifiers);
 
 	// initialize all columns ON by default
-	const baseFields = ["name", "length", "authors", "title"];
+	const baseFields = ["name", "length", "authors", "title", "journal"];
 
 	columnState = {};
 	for (const q of currentQualifiers) columnState[q] = true;
@@ -49,7 +49,7 @@ function renderCheckboxes(sourceQualifiers) {
 
 	checkboxContainer.innerHTML = '';
 
-	const baseFields = ["name", "length", "authors", "title"];
+	const baseFields = ["name", "length", "authors", "journal", "title"];
 
 	const allFields = [
 		...baseFields,
@@ -277,7 +277,8 @@ function genbankToMetadataTable(genbankText, activeQualifiers, includeCleanDate 
 		name: includeColumnState["name"],
 		length: includeColumnState["length"],
 		authors: includeColumnState["authors"],
-		title: includeColumnState["title"]
+		title: includeColumnState["title"],
+		journal: includeColumnState["journal"]
 	};
 	
 	const header = [
@@ -289,7 +290,8 @@ function genbankToMetadataTable(genbankText, activeQualifiers, includeCleanDate 
 		...(includeExcelDate ? ["collection_date_string_excel"] : []),
 		...(includeCleanExcelDate ? ["collection_date_clean_string_excel"] : []),
 		...(activeColumns.authors ? ["authors"] : []),
-		...(activeColumns.title ? ["title"] : [])
+		...(activeColumns.title ? ["title"] : []),
+		...(activeColumns.journal ? ["journal"] : [])
 	];
 	output.push(header.join(DELIMITER));
 
@@ -301,6 +303,8 @@ function genbankToMetadataTable(genbankText, activeQualifiers, includeCleanDate 
     let authorsContinuing = false;
     let title = "";
     let titleContinuing = false;
+    let journal = "";
+    let journalContinuing = false;
     
     let qualifierValues = {};
 	for (const qualifier of activeQualifiers) {
@@ -324,7 +328,8 @@ function genbankToMetadataTable(genbankText, activeQualifiers, includeCleanDate 
 			...(includeExcelDate ? [dateAsStringForExcel(qualifierValues["collection_date"] || collection_date)] : []),
 			...(includeCleanExcelDate ? [dateAsStringForExcel(cleanDate(qualifierValues["collection_date"] || collection_date))] : []),
 			...(activeColumns.authors ? [authors] : []),
-			...(activeColumns.title ? [title] : [])
+			...(activeColumns.title ? [title] : []),
+			...(activeColumns.journal ? [journal] : [])
 		].join(DELIMITER));
     }
 
@@ -343,6 +348,7 @@ function genbankToMetadataTable(genbankText, activeQualifiers, includeCleanDate 
             collection_date = "";
             authors = "";
             title = "";
+            journal = "";
             
             qualifierValues = {};
 			for (const qualifier of activeQualifiers) {
@@ -353,6 +359,7 @@ function genbankToMetadataTable(genbankText, activeQualifiers, includeCleanDate 
 			continuingQualifier = null;
             authorsContinuing = false;
             titleContinuing = false;
+            journalContinuing = false;
         }
 
         // length
@@ -408,6 +415,24 @@ function genbankToMetadataTable(genbankText, activeQualifiers, includeCleanDate 
                 title += " " + match[1];
             } else {
                 titleContinuing = false;
+            }
+        }
+        
+        // journal
+        match = line.match(/  JOURNAL   (.*)/);
+        if (match) {
+            if (journal) {
+                journal += "; ";
+            }
+            journal += match[1];
+            journalContinuing = true;
+        }
+        else if (journalContinuing) {
+            match = line.match(/            (.*)/);
+            if (match) {
+                journal += " " + match[1];
+            } else {
+                journalContinuing = false;
             }
         }
         
@@ -482,6 +507,7 @@ function countColumnValues(genbankText, qualifiers) {
         length: 0,
         authors: 0,
         title: 0,
+        journal: 0,
         collection_date_clean: 0,
         collection_date_string_excel: 0,
         collection_date_clean_string_excel: 0
@@ -494,6 +520,7 @@ function countColumnValues(genbankText, qualifiers) {
     let length = "";
     let authors = "";
     let title = "";
+    let journal = "";
     let collection_date = "";
 
     let qualifierValues = {};
@@ -503,6 +530,7 @@ function countColumnValues(genbankText, qualifiers) {
     let continuingQualifier = null;
     let authorsContinuing = false;
     let titleContinuing = false;
+    let journalContinuing = false;
 
     function finishEntry() {
 
@@ -512,6 +540,7 @@ function countColumnValues(genbankText, qualifiers) {
         if (length) counts.length++;
         if (authors) counts.authors++;
         if (title) counts.title++;
+        if (journal) counts.journal++;
 
         qualifiers.forEach(q => {
             if (qualifierValues[q] !== "") {
@@ -546,6 +575,7 @@ function countColumnValues(genbankText, qualifiers) {
             continuingQualifier = null;
             authorsContinuing = false;
             titleContinuing = false;
+            journalContinuing = false;
         }
 
         let match;
@@ -583,6 +613,18 @@ function countColumnValues(genbankText, qualifiers) {
                 title += " " + match[1];
             else
                 titleContinuing = false;
+        }
+        
+        match = line.match(/  JOURNAL   (.*)/);
+        if (match) {
+            journal += (journal ? "; " : "") + match[1];
+            journalContinuing = true;
+        } else if (journalContinuing) {
+            match = line.match(/            (.*)/);
+            if (match)
+                journal += " " + match[1];
+            else
+                journalContinuing = false;
         }
 
         match = line.match(/^ {5}(\S+)/);
